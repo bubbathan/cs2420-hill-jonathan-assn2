@@ -43,23 +43,84 @@ public class Tree<E extends Comparable<? super E>> {
      * Return a string containing the tree contents as a tree with one node per line
      */
     public String toString() {
-        // TODO:
-        return "";
+        String treeString = this.name + ":\n";
+
+        if (root == null) {
+            treeString += "Empty Tree\n";
+            return treeString;
+        }
+
+        return createString(root, 0);
+    }
+
+    private String createString(BinaryTreeNode treeNode, int depth) {
+        String str = "";
+        if ( treeNode == null) {return str;}
+
+        str += createString(treeNode.right, depth + 1);
+
+        for (int i = 0; i < depth; i++) {
+            str += "  ";
+        }
+
+        if (treeNode.parent == null) {
+            str += treeNode.element + " [no parent]\n";
+        } else {
+            str += treeNode.element + " [" + treeNode.parent.element + "]\n";
+        }
+
+        str += createString(treeNode.left, depth + 1);
+
+        return str;
     }
 
     /**
      * Return a string containing the tree contents as a single line
      */
     public String inOrderToString() {
-        // TODO:
-        return "";
+        String inOrderString = this.name + ": ";
+        ArrayList<BinaryTreeNode> inOrderNodes = new ArrayList<>();
+        if (root == null) {
+            return inOrderString += "Empty Tree";
+        }
+        inOrderNodes = inOrderTraversal(root, inOrderNodes);
+
+        for (int i = 0; i < inOrderNodes.size(); i++) {
+            inOrderString += inOrderNodes.get(i).element + " ";
+        }
+
+        return inOrderString;
+    }
+
+    private ArrayList<BinaryTreeNode> inOrderTraversal(BinaryTreeNode node, ArrayList<BinaryTreeNode> nodeList) {
+        if (node == null) {
+            return nodeList;
+        }
+
+        inOrderTraversal(node.left, nodeList);
+        nodeList.add(node);
+        inOrderTraversal(node.right, nodeList);
+
+        return nodeList;
     }
 
     /**
      * reverse left and right children recursively
      */
     public void flip() {
-        // TODO:
+        if (root != null) {
+            flipTree(root);
+        }
+    }
+
+    private void flipTree(BinaryTreeNode node) {
+        if (node != null) {
+            BinaryTreeNode newLeftNode = node.right;
+            node.right = node.left;
+            node.left = newLeftNode;
+            flipTree(node.right);
+            flipTree(node.left);
+        }
     }
 
     /**
@@ -67,8 +128,27 @@ public class Tree<E extends Comparable<? super E>> {
      * @param node node from which to find the in-order successor
      */
     public BinaryTreeNode inOrderSuccessor(BinaryTreeNode node) {
-        // TODO:
-        return null;
+        if (root == null) {return null;}
+
+        return findSuccessor(root, root.parent, node);
+    }
+
+    private BinaryTreeNode findSuccessor(BinaryTreeNode treeNode, BinaryTreeNode parent, BinaryTreeNode searchNode) {
+        if (treeNode == null) {
+            return backwardsTraversal(parent, searchNode);
+        } else if (searchNode.element.compareTo(treeNode.element) >= 0) {
+            return findSuccessor(treeNode.right, treeNode, searchNode);
+        } else {
+            return findSuccessor(treeNode.left, treeNode, searchNode);
+        }
+    }
+
+    private BinaryTreeNode backwardsTraversal(BinaryTreeNode treeNode, BinaryTreeNode searchNode) {
+        if (treeNode.element.compareTo(searchNode.element) <= 0) {
+            return backwardsTraversal(treeNode.parent, searchNode);
+        } else {
+            return treeNode;
+        }
     }
 
     /**
@@ -78,15 +158,61 @@ public class Tree<E extends Comparable<? super E>> {
      * @return count of number of nodes at specified level
      */
     public int nodesInLevel(int level) {
-        // TODO:
-        return 0;
+        if (root == null){
+            return 0;
+        }
+
+        return countNodesInLevel(level, root, 0, 0);
+    }
+
+    private int countNodesInLevel(int level, BinaryTreeNode node, int levelCount, int nodeCount) {
+        if (node == null) {
+            return nodeCount;
+        }
+
+        if (level == levelCount) {
+            return nodeCount + 1;
+        } else {
+            int leftNodes = countNodesInLevel(level, node.left, levelCount + 1, nodeCount);
+            int rightNodes = countNodesInLevel(level, node.right, levelCount + 1, nodeCount);
+            return leftNodes + rightNodes;
+        }
     }
 
     /**
      * Print all paths from root to leaves
      */
     public void printAllPaths() {
-        // TODO:
+        if (root == null) {return;}
+
+        pathTraversal(root, root.parent);
+    }
+
+    private void pathTraversal(BinaryTreeNode node, BinaryTreeNode parent) {
+        if (node.left == null && node.right == null) {
+            printPath(root, node.element);
+        } else if (node.left == null) {
+            pathTraversal(node.right, node);
+        } else if (node.right == null) {
+            pathTraversal(node.left, node);
+        } else {
+            pathTraversal(node.left, node);
+            pathTraversal(node.right, node);
+        }
+    }
+
+    private void printPath(BinaryTreeNode node, E key) {
+        if (key.compareTo(node.element) == 0) {
+            System.out.print(node.element + "\n");
+        } else {
+            System.out.print(node.element + " ");
+
+            if (key.compareTo(node.element) < 0) {
+                printPath(node.left, key);
+            } else {
+                printPath(node.right, key);
+            }
+        }
     }
 
     /**
@@ -95,8 +221,44 @@ public class Tree<E extends Comparable<? super E>> {
      * @return Count of embedded binary search trees
      */
     public int countBST() {
-        // TODO:
-        return 0;
+        int count = 0;
+        if (root == null) {
+            return 0;
+        }
+
+        return countingBST(root, count);
+    }
+
+    private int countingBST(BinaryTreeNode node, int count) {
+        if (node == null) {
+            return 0;
+        }
+
+        int leftCount = countingBST(node.left, count);
+        int rightCount = countingBST(node.right, count);
+        if (identifyBST(node)) {
+            leftCount += 1;
+        }
+
+        return count + rightCount + leftCount;
+    }
+
+    private boolean identifyBST(BinaryTreeNode node) {
+        if (node.left == null && node.right == null) {
+            return true;
+        } else if (node.left == null && node.right.element.compareTo(node.element) > 0) {
+            return identifyBST(node.right);
+        } else if (node.right == null && node.left.element.compareTo(node.element) < 0) {
+            return identifyBST(node.left);
+        } else if (node.right != null && node.left != null) {
+            if (node.right.element.compareTo(node.element) > 0 && node.left.element.compareTo(node.element) < 0) {
+                return identifyBST(node.right) && identifyBST(node.left);
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -109,15 +271,45 @@ public class Tree<E extends Comparable<? super E>> {
     }
 
     public BinaryTreeNode getByKey(E key) {
-        // TODO:
-        return null;
+        if (root == null) {
+            return null;
+        }
+
+        return getByKeyTraversal(key, root);
+    }
+
+    private BinaryTreeNode getByKeyTraversal(E key, BinaryTreeNode node) {
+        if (key.compareTo(node.element) == 0) {
+            return node;
+        } else if (key.compareTo(node.element) < 0) {
+            return getByKeyTraversal(key, node.left);
+        } else {
+            return getByKeyTraversal(key, node.right);
+        }
     }
 
     /**
      * Balance the tree
      */
     public void balanceTree() {
-        // TODO:
+        ArrayList<BinaryTreeNode> inOrderNodes = new ArrayList<>();
+        if (root != null) {
+            inOrderNodes = inOrderTraversal(root, inOrderNodes);
+            binaryTraversal (this.root, this.root.parent, inOrderNodes, 0, inOrderNodes.size());
+        }
+    }
+
+    private void binaryTraversal(BinaryTreeNode node, BinaryTreeNode parent, ArrayList<BinaryTreeNode> nodeList, int min, int max) {
+        if (min >= max) {
+            return;
+        } else {
+            int value = ((max - min) / 2) + min;
+            node = nodeList.get(value);
+            node.parent = parent;
+
+            binaryTraversal(node.left, node, nodeList, min, value);
+            binaryTraversal(node.right, node, nodeList, value + 1, max);
+        }
     }
 
     /**
